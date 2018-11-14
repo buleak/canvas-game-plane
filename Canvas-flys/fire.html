@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>雷电</title>
+		<link rel="stylesheet" type="text/css" href="css/fire.css" />
+	</head>
+	<body>
+		<div id="box">
+			<article id="begin">
+				<h1>打飞机小游戏</h1>
+				<h2>游戏介绍</h2>
+				<p>敌机逃离则扣除一定血量，敌机碰撞则Game Over</p>
+				<ul>
+					<li><img src="img/images/qq1.png" alt="Q"><span>Q：增加攻击力</span></li>
+					<li><img src="img/images/qq2.png" alt="W"><span>W：护盾，可以防御一次攻击</span></li>
+					<li><img src="img/images/qq3.png" alt="E"><span>E：增加移动速度，并恢复一定血量</span></li>
+					<li><img src="img/images/qq4.png" alt="R"><span>R：全屏减速</span></li>
+				</ul>
+			</article>
+			<article id="canvas">
+				<span class="spans">分数</span><span id="score" class="spans"></span>
+				<span class="spans">血量</span><span id="blood" class="spans"></span>
+				<span class="spans">怒气</span><span id="rage" class="spans"></span>
+				<span class="spans">剩余敌机</span><span id="foe" class="spans"></span>
+				<canvas id="flyGame" width="500px" height="600px"></canvas>
+				<div class="gamestatus" id="status"></div>
+			</article>
+		</div>
+		<aside>
+			<button type="button" onclick="gameBegin()">开始</button>
+			<button type="button" onclick="gamePause()">暂停</button>
+			<button type="button" onclick="game('gameOver')">结束</button>
+		</aside>
+
+	</body>
+	<script src="js/fire.js"></script>
+</html>
