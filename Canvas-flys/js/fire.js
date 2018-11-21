@@ -1,16 +1,15 @@
 let canvas = document.getElementById('canvas'),
 	statuss = document.getElementById('status'),
-	begin = document.getElementById('begin'),
+	//begin = document.getElementById('begin'),
 	ctx = document.getElementById('flyGame').getContext('2d');
 
-let score, air, airs, enemys, bullets, setEnemy, setBullet,
+let air, airs, enemys, bullets, setEnemy, setBullet,
 	enemyArr = [],
 	bulletArr = [],
 	boomArr = [],
 	scores = document.getElementById('score'),
 	bloods = document.getElementById('blood'),
-	rages = document.getElementById('rage'),
-	foes = document.getElementById('foe');
+	rages = document.getElementById('rage');
 
 let CONFIG = {
 	x: 225,
@@ -19,6 +18,7 @@ let CONFIG = {
 	obj: {},
 	gamestatus: 'gameStart', //游戏开始
 	status: 'normal', //飞机状态
+	score: 0, //得分
 	level: 1, //游戏等级
 	totalLevel: 5, //游戏关卡
 	enemyNum: 20, //敌人数量
@@ -79,15 +79,19 @@ class Enemy extends Parent {
 					ctx.drawImage(enemyImg, this.x, this.y);
 					break;
 				case 'booming':
-				    var boomImg = new Image();
-				    boomImg.src = this.boomIcon;
-				    this.speed = 0;
+					var boomImg = new Image();
+					boomImg.src = this.boomIcon;
+					this.speed = 0;
 					boomArr.push(this);
-				    ctx.drawImage(boomImg, this.x - 60, this.y - 60);			    
+					ctx.drawImage(boomImg, this.x - 60, this.y - 60);
 					break;
 				case 'boomed':
-				    enemyArr.splice(this)
-					ctx.clearRect(this.x-5, this.y-5, this.size+10, this.size+10);
+					enemyArr.splice(this);
+					CONFIG.score += Math.ceil(10);
+					CONFIG.rage += Math.ceil(1);
+					scores.innerText = CONFIG.score;
+					rages.innerText = CONFIG.rage;
+					ctx.clearRect(this.x - 5, this.y - 5, this.size + 10, this.size + 10);
 					break;
 				default:
 					break;
@@ -99,16 +103,6 @@ class Enemy extends Parent {
 		this.move(0, this.speed);
 		return this;
 	}
-
-// 	booming() {
-// 		this.status = 'booming';
-//  		this.boomCount += 1;
-//  		if (this.booming > 4) {
-// 			this.status = 'boomed';
-// 			return this;
-// 		}
-// 		super.booming();
-// 	}
 }
 
 class Bullet extends Parent {
@@ -142,7 +136,7 @@ class Air extends Parent {
 
 		this.x = opts.x;
 		this.y = opts.y;
-
+		this.speed = 10;
 		this.status = 'normal';
 		this.airIcon = opts.airIcon;
 		this.minX = opts.minX;
@@ -170,6 +164,25 @@ class Air extends Parent {
 		}
 	}
 
+	draw() {
+		if (this.airIcon && this.boomIcon) {
+			switch (this.status) {
+				case 'booming':
+					var boomImg = new Image();
+					boomImg.src = this.boomIcon;
+					this.speed = 0;
+					boomArr.push(this);
+					ctx.drawImage(boomImg, this.x - 60, this.y - 60);
+					break;
+				case 'boomed':
+					ctx.clearRect(this.x - 5, this.y - 5, this.size + 10, this.size + 10);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
 	skill() {
 		for (let i of codeArr) {
 			if (i == 81 && skillObj.q.cd <= 0) { //Q 加攻击
@@ -192,32 +205,10 @@ class Air extends Parent {
 	}
 }
 
-// function booming() {
-// 	for (let j of enemyArr) {
-// 		if (j.status == 'booming') {
-// 			boomArr.push(j);
-// 			score += 5;
-// 			airs.rage++;
-// 			scores.innerHTML = score;
-// 			bloods.innerHTML = j.blood;
-// 			rages.innerHTML = airs.rage;
-// 			foes.innerHTML = enemyArr.length;
-// 		}
-// 	}
-// }
 
-function boomed() {
-	for (let j of boomArr) {
-		if (j.boomTime > 0) {
-			j.boomTime--;
-		} else {
-			j.status = 'boomed';
-		}
-	}
-}
-
+//初始化游戏
 function init() {
-	score = 0;
+	CONFIG.score = 0;
 	air = new Image();
 	airs = new Air(CONFIG);
 	air.src = airs.airIcon;
@@ -235,23 +226,26 @@ function drawInit() {
 		ctx.restore();
 		enemyDraw();
 		bulletDraw();
+		airs.draw();
 		fire();
-		//booming();
+		keep();
 		boomed();
-		if (airs.status == 'boom') {
-			game('gameOver')
-		}
-		if (score >= 100) {
-			game('gameUp')
+		canvasMove();
+		if (CONFIG.score >= 300) {
+			game('gameThrough');
 		}
 	}
 	window.requestAnimationFrame(drawInit);
 }
 
 init();
+let canvasY = 0
 
+function canvasMove() {
+	canvasY += 1;
+	canvas.style.backgroundPositionY = canvasY + 'px';
+}
 
- 
 // 控制飞机方向   
 // 按下按键，code存入[]中，松开按键，code从[]中删除
 // 遍历[]，若其中有按键x，则触发移动事件X
@@ -288,7 +282,7 @@ function createFoe() {
 			enemys = new Enemy(CONFIG);
 			CONFIG.enemyNum--;
 			enemyArr.push(enemys);
-		}, Math.ceil(Math.random() * 4 + 1) * 1000)
+		}, Math.ceil(Math.random() * 2 + 1) * 1000)
 	}
 }
 
@@ -306,10 +300,13 @@ function enemyDraw() {
 	for (let i of enemyArr) {
 		i.moveFoe();
 		i.draw();
-		if (i.y > 600) {
-			i.y = -Math.ceil(Math.random() * 300);
-			i.x = Math.ceil(Math.random() * 400 + 40);
-			i.enemyIcon = 'img.images/foe' + Math.ceil(Math.random() * 6) + '.png';
+		if (i.y >= 600) {
+			enemyArr.splice(i, 1);
+			airs.blood -= 10;
+			bloods.innerText = airs.blood;
+			if (airs.blood <= 0) {
+				airs.status = 'booming';
+			}
 		}
 	}
 }
@@ -338,37 +335,44 @@ function fire() {
 				y1 = j.y;
 			if (x > x1 && x < x1 + 75 && y > y1 && y < y1 + 75) {
 				bulletArr.splice(i, 1);
-				//j.blood -= 20;
-				//if (j.blood <= 0) {
+				j.blood -= 20;
+				if (j.blood <= 0) {
 					j.status = 'booming';
-				//}
+				}
 			}
 		}
-
 	}
 }
 
+function boomed() {
+	for (let j of boomArr) {
+		if (j.boomTime > 0) {
+			j.boomTime--;
+		} else {
+			j.status = 'boomed';
+		}
+	}
+	if (airs.status == 'boomed') {
+		game('gameOver');
+	}
+}
 
+// 飞机碰撞，判定game over
+function keep() {
+	var x = airs.x,
+		y = airs.y;
+	for (let j of enemyArr) {
+		var x1 = j.x,
+			y1 = j.y;
+		if (x > x1 && x < x1 + 75 && y > y1 && y < y1 + 75) {
+			airs.speed = 0;
+			airs.status = 'booming';
+			j.status = 'booming';
 
-// 	//  敌人移动
-// 	function foeFly() {
-// 		for (var i of foeArr) {
-// 			var foe = new Image();
-// 			foe.src = 'img/images/foe' + i.foeType + '.png';
-// 			ctx.drawImage(foe, i.foex, i.foey);
-// 			i.foey += i.foeSpeed;
-// 			if (i.foey > 600) {
-// 				foeArr.splice(i, 1);
-// 				createEnemy();
-// 				airObj.airs.blood -= 50;
-// 			}
-// 		}
-// 	}
-// 
-// 	//碰撞
-// 
-// 
-// 
+		}
+	}
+}
+
 // 	// 被动技能
 // 	function buff() {
 // 
@@ -455,23 +459,27 @@ function skillR(speed) {
 // 	// 暂停界面
 // 	// 结束界面
 function gameBegin() {
+	if (setEnemy) {
+		clearInterval(setEnemy);
+	}
+	if (setEnemy) {
+		clearInterval(setEnemy);
+	}
+	createFoe();
+	createBullet();
 	CONFIG.gameStatus = 'gameStart';
-	// 		if (setEnemy) {
-	// 			clearInterval(setEnemy)
-	// 		}
-	// 		if (sb) {
-	// 			clearTimeout(sb)
-	// 		}
-	//		createFoe();
-	// 		createBullet();
 	statuss.style.display = 'none';
-	begin.style.display = 'none';
+	//begin.style.display = 'none';
 	canvas.style.display = 'block';
 }
 
-function gamePause() {
-	game('gamePause');
-	//clearInterval(si);
+function gameOver() {
+	game('gameOver');
+	if (confirm("即将退出游戏")) {
+		 window.location.href="about:blank";
+		window.close();
+	} else {}
+
 }
 
 function game(status) {
@@ -484,12 +492,12 @@ function game(status) {
 		case 'gameOver':
 			txt = '游戏结束'
 			break;
-		case 'gameUp':
-			txt = '下一关'
+		case 'gameThrough':
+			txt = '游戏通关'
 			break;
 	}
-	statuss.innerHTML = '<h1>' + txt + '</h1><h2>分数' + score + '</h2>';
+	statuss.innerHTML = '<h1>' + txt + '</h1><h2>分数' + CONFIG.score + '</h2>';
 	statuss.style.display = 'block';
-	//clearTimeout(sb);
-	//clearInterval(si);
+	clearInterval(setEnemy);
+	clearInterval(setBullet);
 }
